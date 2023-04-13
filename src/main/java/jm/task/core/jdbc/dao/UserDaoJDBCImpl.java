@@ -8,6 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoJDBCImpl extends Util implements UserDao {
+    private static final String STARTTRANSACTION = """
+                START TRANSACTION;
+                """;
+    private static final String COMMIT = """
+                COMMIT;
+                """;
+
     public UserDaoJDBCImpl() {
 
     }
@@ -16,16 +23,19 @@ public class UserDaoJDBCImpl extends Util implements UserDao {
         String sql = """
                 CREATE TABLE IF NOT EXISTS users (
                     user_id SERIAL Primary Key AUTO_INCREMENT,
-                    name VARCHAR(45) NOT NULL,
+                    user_name VARCHAR(45) NOT NULL,
                     lastName VARCHAR(45),
                     age INT NOT NULL
-                )
+                    );
                 """;
 
         try (Connection con = getConnection();
-             Statement statement = con.createStatement()) {
-
-            statement.execute(sql);
+             Statement statement = con.createStatement();
+             Statement startStatement = con.createStatement();
+             Statement comStatement = con.createStatement()) {
+                 startStatement.execute(STARTTRANSACTION);
+                 statement.execute(sql);
+                 comStatement.execute(COMMIT);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -33,31 +43,36 @@ public class UserDaoJDBCImpl extends Util implements UserDao {
 
     public void dropUsersTable() {
         String sql = """
-                DROP TABLE IF EXISTS users;
+                 DROP TABLE IF EXISTS users;
                 """;
 
         try (Connection con = getConnection();
-             Statement statement = con.createStatement()) {
-
+             Statement statement = con.createStatement();
+             Statement startStatement = con.createStatement()) {
+            startStatement.execute(STARTTRANSACTION);
             statement.execute(sql);
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    public void saveUser(String name, String lastName, byte age) {
+    public void saveUser(String user_name, String lastName, byte age) {
 
-        String sql = String.format("""
-                INSERT INTO users(name, lastname, age)
-                VALUES (?, ?, ?)
-                """, name, lastName, age);
+        String sql = ("""
+                INSERT INTO users(user_name, lastname, age)
+                VALUES (?, ?, ?);
+                """);
         try (Connection con = getConnection();
-             PreparedStatement preparedStatement = con.prepareStatement(sql)) {
+             PreparedStatement preparedStatement = con.prepareStatement(sql);
+             Statement startStatement = con.createStatement();
+             Statement comStatement = con.createStatement()) {
 
-            preparedStatement.setByte(3, age);
-            preparedStatement.setString(1, name);
+            preparedStatement.setString(1, user_name);
             preparedStatement.setString(2, lastName);
+            preparedStatement.setByte(3, age);
+            startStatement.execute(STARTTRANSACTION);
             preparedStatement.executeUpdate();
+            comStatement.execute(COMMIT);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -66,14 +81,18 @@ public class UserDaoJDBCImpl extends Util implements UserDao {
     public void removeUserById(long id) {
         String sql = """
                 DELETE FROM users
-                WHERE user_id = ?
+                WHERE user_id = ?;
                 """;
 
         try (Connection con = getConnection();
-             PreparedStatement preparedStatement = con.prepareStatement(sql)) {
+             PreparedStatement preparedStatement = con.prepareStatement(sql);
+             Statement startStatement = con.createStatement();
+             Statement comStatement = con.createStatement()) {
 
             preparedStatement.setLong(1, id);
+            startStatement.execute(STARTTRANSACTION);
             preparedStatement.executeUpdate();
+            comStatement.execute(COMMIT);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -83,18 +102,22 @@ public class UserDaoJDBCImpl extends Util implements UserDao {
         List<User> userList = new ArrayList<>();
 
         String sql = """
-                SELECT user_id, name, lastname, age
-                FROM users
+                SELECT user_id, user_name, lastname, age
+                FROM users;
                 """;
 
         try (Connection con = getConnection();
-             Statement statement = con.createStatement()) {
+             Statement statement = con.createStatement();
+             Statement startStatement = con.createStatement();
+             Statement comStatement = con.createStatement()) {
+            startStatement.execute(STARTTRANSACTION);
             ResultSet resultSet = statement.executeQuery(sql);
+            comStatement.execute(COMMIT);
 
             while (resultSet.next()) {
                 User user = new User();
                 user.setId(resultSet.getLong("user_id"));
-                user.setName(resultSet.getString("name"));
+                user.setName(resultSet.getString("user_name"));
                 user.setLastName(resultSet.getString("lastName"));
                 user.setAge(resultSet.getByte("age"));
 
@@ -109,10 +132,12 @@ public class UserDaoJDBCImpl extends Util implements UserDao {
 
     public void cleanUsersTable() {
         String sql = """
-                TRUNCATE users
+                TRUNCATE users;
                 """;
         try (Connection con = getConnection();
-             Statement statement = con.createStatement()) {
+             Statement statement = con.createStatement();
+             Statement startStatement = con.createStatement()) {
+            startStatement.execute(STARTTRANSACTION);
             statement.execute(sql);
         } catch (SQLException e) {
             e.printStackTrace();
