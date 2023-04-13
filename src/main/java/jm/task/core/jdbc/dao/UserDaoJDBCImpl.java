@@ -8,13 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoJDBCImpl extends Util implements UserDao {
-    private static final String STARTTRANSACTION = """
-                START TRANSACTION;
-                """;
-    private static final String COMMIT = """
-                COMMIT;
-                """;
-
+    private Connection con = null;
     public UserDaoJDBCImpl() {
 
     }
@@ -30,12 +24,8 @@ public class UserDaoJDBCImpl extends Util implements UserDao {
                 """;
 
         try (Connection con = getConnection();
-             Statement statement = con.createStatement();
-             Statement startStatement = con.createStatement();
-             Statement comStatement = con.createStatement()) {
-                 startStatement.execute(STARTTRANSACTION);
+             Statement statement = con.createStatement()) {
                  statement.execute(sql);
-                 comStatement.execute(COMMIT);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -47,9 +37,7 @@ public class UserDaoJDBCImpl extends Util implements UserDao {
                 """;
 
         try (Connection con = getConnection();
-             Statement statement = con.createStatement();
-             Statement startStatement = con.createStatement()) {
-            startStatement.execute(STARTTRANSACTION);
+             Statement statement = con.createStatement()) {
             statement.execute(sql);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -63,17 +51,22 @@ public class UserDaoJDBCImpl extends Util implements UserDao {
                 VALUES (?, ?, ?);
                 """);
         try (Connection con = getConnection();
-             PreparedStatement preparedStatement = con.prepareStatement(sql);
-             Statement startStatement = con.createStatement();
-             Statement comStatement = con.createStatement()) {
+             PreparedStatement preparedStatement = con.prepareStatement(sql)) {
 
             preparedStatement.setString(1, user_name);
             preparedStatement.setString(2, lastName);
             preparedStatement.setByte(3, age);
-            startStatement.execute(STARTTRANSACTION);
-            preparedStatement.executeUpdate();
-            comStatement.execute(COMMIT);
+            if (preparedStatement.executeUpdate() > 0) {
+                con.commit();
+            } else {
+                con.rollback();
+            }
         } catch (SQLException e) {
+            try {
+                con.rollback();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
             e.printStackTrace();
         }
     }
@@ -85,15 +78,20 @@ public class UserDaoJDBCImpl extends Util implements UserDao {
                 """;
 
         try (Connection con = getConnection();
-             PreparedStatement preparedStatement = con.prepareStatement(sql);
-             Statement startStatement = con.createStatement();
-             Statement comStatement = con.createStatement()) {
+             PreparedStatement preparedStatement = con.prepareStatement(sql)) {
 
             preparedStatement.setLong(1, id);
-            startStatement.execute(STARTTRANSACTION);
-            preparedStatement.executeUpdate();
-            comStatement.execute(COMMIT);
+            if (preparedStatement.executeUpdate() > 0) {
+                con.commit();
+            } else {
+                con.rollback();
+            }
         } catch (SQLException e) {
+            try {
+                con.rollback();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
             e.printStackTrace();
         }
     }
@@ -108,11 +106,7 @@ public class UserDaoJDBCImpl extends Util implements UserDao {
 
         try (Connection con = getConnection();
              Statement statement = con.createStatement();
-             Statement startStatement = con.createStatement();
-             Statement comStatement = con.createStatement()) {
-            startStatement.execute(STARTTRANSACTION);
-            ResultSet resultSet = statement.executeQuery(sql);
-            comStatement.execute(COMMIT);
+             ResultSet resultSet = statement.executeQuery(sql)) {
 
             while (resultSet.next()) {
                 User user = new User();
@@ -126,7 +120,6 @@ public class UserDaoJDBCImpl extends Util implements UserDao {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
         return userList;
     }
 
@@ -135,9 +128,7 @@ public class UserDaoJDBCImpl extends Util implements UserDao {
                 TRUNCATE users;
                 """;
         try (Connection con = getConnection();
-             Statement statement = con.createStatement();
-             Statement startStatement = con.createStatement()) {
-            startStatement.execute(STARTTRANSACTION);
+             Statement statement = con.createStatement()) {
             statement.execute(sql);
         } catch (SQLException e) {
             e.printStackTrace();

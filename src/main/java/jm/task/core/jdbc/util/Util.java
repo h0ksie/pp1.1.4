@@ -12,28 +12,16 @@ public class Util {
     private static final String USERNAME = "root";
     private static final String PASSWORD = "root";
 
-    private static final String MANUALTRANSACTIONCONTROL = """
-            SET AUTOCOMMIT = 0;
-            """;
-
 
     public static Connection getConnection() {
         Connection connection = null;
-        Statement statement = null;
 
         try {
             Class.forName(DRIVER);
             connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
-            statement = connection.createStatement();
-            statement.execute(MANUALTRANSACTIONCONTROL);
+            connection.setAutoCommit(false);
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                statement.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
         }
         return connection;
     }
