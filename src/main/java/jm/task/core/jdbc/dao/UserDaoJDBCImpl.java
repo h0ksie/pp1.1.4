@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoJDBCImpl extends Util implements UserDao {
-    private Connection con = null;
     public UserDaoJDBCImpl() {
 
     }
@@ -25,7 +24,7 @@ public class UserDaoJDBCImpl extends Util implements UserDao {
 
         try (Connection con = getConnection();
              Statement statement = con.createStatement()) {
-                 statement.execute(sql);
+            statement.execute(sql);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -50,23 +49,20 @@ public class UserDaoJDBCImpl extends Util implements UserDao {
                 INSERT INTO users(user_name, lastname, age)
                 VALUES (?, ?, ?);
                 """);
-        try (Connection con = getConnection();
-             PreparedStatement preparedStatement = con.prepareStatement(sql)) {
+        try (Connection con = getConnection()) {
+            try (PreparedStatement preparedStatement = con.prepareStatement(sql)) {
 
-            preparedStatement.setString(1, user_name);
-            preparedStatement.setString(2, lastName);
-            preparedStatement.setByte(3, age);
-            if (preparedStatement.executeUpdate() > 0) {
+                preparedStatement.setString(1, user_name);
+                preparedStatement.setString(2, lastName);
+                preparedStatement.setByte(3, age);
+                preparedStatement.executeUpdate();
                 con.commit();
-            } else {
+
+            } catch (SQLException e) {
                 con.rollback();
+                e.printStackTrace();
             }
         } catch (SQLException e) {
-            try {
-                con.rollback();
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
-            }
             e.printStackTrace();
         }
     }
@@ -77,21 +73,19 @@ public class UserDaoJDBCImpl extends Util implements UserDao {
                 WHERE user_id = ?;
                 """;
 
-        try (Connection con = getConnection();
-             PreparedStatement preparedStatement = con.prepareStatement(sql)) {
+        try (Connection con = getConnection()) {
+            try (PreparedStatement preparedStatement = con.prepareStatement(sql)) {
 
-            preparedStatement.setLong(1, id);
-            if (preparedStatement.executeUpdate() > 0) {
+                preparedStatement.setLong(1, id);
+                preparedStatement.executeUpdate();
+
                 con.commit();
-            } else {
+
+            } catch (SQLException e) {
                 con.rollback();
+                e.printStackTrace();
             }
         } catch (SQLException e) {
-            try {
-                con.rollback();
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
-            }
             e.printStackTrace();
         }
     }
