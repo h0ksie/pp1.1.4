@@ -1,9 +1,14 @@
 package jm.task.core.jdbc.util;
 
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Environment;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.Properties;
 
 public class Util {
 
@@ -26,4 +31,20 @@ public class Util {
         return connection;
     }
 
+    public static SessionFactory getSessionFactory() {
+        Properties props = new Properties();
+        props.put(Environment.DRIVER, DRIVER);
+        props.put(Environment.URL, URL);
+        props.put(Environment.USER, USERNAME);
+        props.put(Environment.PASS, PASSWORD);
+
+        Configuration conf = new Configuration()
+                .addAnnotatedClass(jm.task.core.jdbc.model.User.class)
+                .setProperties(props);
+
+        SessionFactory sf = conf.buildSessionFactory();
+            return sf;
+
+
+    }
 }
