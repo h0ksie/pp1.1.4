@@ -1,6 +1,5 @@
 package jm.task.core.jdbc.util;
 
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.cfg.Environment;
@@ -16,6 +15,7 @@ public class Util {
     private static final String URL = "jdbc:mysql://localhost:3306/userdb";
     private static final String USERNAME = "root";
     private static final String PASSWORD = "root";
+    private static SessionFactory sessionFactory;
 
 
     public static Connection getConnection() {
@@ -32,19 +32,20 @@ public class Util {
     }
 
     public static SessionFactory getSessionFactory() {
-        Properties props = new Properties();
-        props.put(Environment.DRIVER, DRIVER);
-        props.put(Environment.URL, URL);
-        props.put(Environment.USER, USERNAME);
-        props.put(Environment.PASS, PASSWORD);
+        if (sessionFactory == null) {
+            Properties props = new Properties();
+            props.put(Environment.DRIVER, DRIVER);
+            props.put(Environment.URL, URL);
+            props.put(Environment.USER, USERNAME);
+            props.put(Environment.PASS, PASSWORD);
 
-        Configuration conf = new Configuration()
-                .addAnnotatedClass(jm.task.core.jdbc.model.User.class)
-                .setProperties(props);
+            Configuration conf = new Configuration()
+                    .addAnnotatedClass(jm.task.core.jdbc.model.User.class)
+                    .setProperties(props);
 
-        SessionFactory sf = conf.buildSessionFactory();
-            return sf;
-
-
+            sessionFactory = conf.buildSessionFactory();
+            return sessionFactory;
+        }
+        return sessionFactory;
     }
 }
